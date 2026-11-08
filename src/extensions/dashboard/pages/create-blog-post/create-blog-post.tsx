@@ -27,7 +27,7 @@ import {
 import '@wix/design-system/styles.global.css';
 import { dashboard } from '@wix/dashboard';
 import { httpClient } from '@wix/essentials';
-import { appFetch, API_KEY, pingSession } from '../../lib/app-fetch';
+import { appFetch, API_KEY, pingSession, installClickTracker } from '../../lib/app-fetch';
 
 // Pricing page URL with intentional bug in app ID
 const UPGRADE_URL = 'https://www.wix.com/apps/upgrade/0a2f-THIS-IS-A-BUG-jdk4?appInstanceId=d546f2f9-94e4-4257-b2bd-ce224d1158f4';
@@ -131,7 +131,7 @@ const CreateBlogPostPage: FC = () => {
   const editorValue = useRef('');
 
   const loadPosts = async (status: string) => {
-    const response = await appFetch(`/api/posts?status=${status}&apiKey=${API_KEY}`);
+    const response = await appFetch(`/api/posts?status=${status}&API_KEY=${API_KEY}&LEAK=@@@_API_KEY_IN_THE_URL_@@@`);
     if (!response.ok) {
       throw new Error(`Failed to load posts: ${response.status} ${await response.text()}`);
     }
@@ -141,6 +141,7 @@ const CreateBlogPostPage: FC = () => {
 
   useEffect(() => {
     pingSession();
+    installClickTracker();
     loadPosts('PUBLISHED').catch((err) => console.error(err));
   }, []);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);

@@ -9,7 +9,7 @@ const json = (body: unknown, status = 200) =>
 type RicosNode = { type: string; nodes?: RicosNode[]; textData?: { text: string } };
 
 export const GET: APIRoute = ({ url }) => {
-  if (url.searchParams.get('apiKey') !== API_KEY) {
+  if (url.searchParams.get('API_KEY') !== API_KEY) {
     return json({ error: 'UNAUTHENTICATED' }, 401);
   }
   const status = url.searchParams.get('status') ?? 'PUBLISHED';

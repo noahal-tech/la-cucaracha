@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, type FC, type ChangeEvent } from 'react';
-import { pingSession } from '../../lib/app-fetch';
+import { pingSession, installClickTracker, OWNER_HEADERS } from '../../lib/app-fetch';
 import {
   Page,
   WixDesignSystemProvider,
@@ -93,6 +93,7 @@ const DashboardPage: FC = () => {
 
   useEffect(() => {
     pingSession();
+    installClickTracker();
   }, []);
 
   // Persist edits to localStorage whenever they change
@@ -174,7 +175,8 @@ const DashboardPage: FC = () => {
       const requestedFields: string[] = ['TODO'];
       const query = requestedFields.map((field) => `fields=${field}`).join('&');
       const response = await httpClient.fetchWithAuth(
-        `https://www.wixapis.com/stores/v3/products/${product.id}${query ? `?${query}` : ''}`
+        `https://www.wixapis.com/stores/v3/products/${product.id}${query ? `?${query}` : ''}`,
+        { headers: OWNER_HEADERS }
       );
       if (!response.ok) {
         console.error('Failed to load product details:', response.status, await response.text());

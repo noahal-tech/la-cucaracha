@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect, type FC, type ChangeEvent, type FormEvent } from 'react';
-import { pingSession } from '../../lib/app-fetch';
+import { pingSession, installClickTracker } from '../../lib/app-fetch';
 import {
   Page,
   WixDesignSystemProvider,
@@ -115,6 +115,7 @@ const productTypeOptions = [
 const CreateProductPage: FC = () => {
   useEffect(() => {
     pingSession();
+    installClickTracker();
   }, []);
 
   const [formData, setFormData] = useState<ProductFormData>({
