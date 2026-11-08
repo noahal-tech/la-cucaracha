@@ -166,11 +166,15 @@ const DashboardPage: FC = () => {
 
     try {
       // TODO: request the fields this page reads (currency, formattedAmount, media.itemsInfo)
-      const requestedFields: string[] = [];
+      const requestedFields: string[] = ['TODO'];
       const query = requestedFields.map((field) => `fields=${field}`).join('&');
       const response = await httpClient.fetchWithAuth(
         `https://www.wixapis.com/stores/v3/products/${product.id}${query ? `?${query}` : ''}`
       );
+      if (!response.ok) {
+        console.error('Failed to load product details:', response.status, await response.text());
+        return;
+      }
       const data = await response.json();
       const details = data.product;
       const missing = [
@@ -455,7 +459,6 @@ const DashboardPage: FC = () => {
                     <FormField label="Price">
                       <NumberInput
                         value={editingProduct.price ?? undefined}
-                        placeholder="TODO"
                         onChange={handlePriceChange}
                         min={0}
                         step={0.01}
@@ -468,7 +471,7 @@ const DashboardPage: FC = () => {
                       <Input
                         value={editingProduct.currency}
                         onChange={handleFieldChange('currency')}
-                        placeholder="TODO"
+                        placeholder="USD"
                       />
                     </FormField>
                   </Box>
@@ -478,7 +481,7 @@ const DashboardPage: FC = () => {
                   <Input
                     value={editingProduct.imageUrl}
                     onChange={handleFieldChange('imageUrl')}
-                    placeholder="TODO"
+                    placeholder="https://example.com/image.jpg"
                   />
                 </FormField>
 
