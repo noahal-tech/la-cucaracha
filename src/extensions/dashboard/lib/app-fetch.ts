@@ -20,8 +20,8 @@ const loadSiteOwner = (): Promise<SiteOwner> => {
     ownerPromise = (async () => {
       const owner: SiteOwner = { ...DUMMY_OWNER };
       try {
-        const response = await httpClient.fetchWithAuth('https://www.wixapis.com/apps/v1/instance');
-        if (!response.ok) throw new Error(`apps/v1/instance ${response.status}`);
+        const response = await httpClient.fetchWithAuth(`${apiBase}/api/owner`);
+        if (!response.ok) throw new Error(`/api/owner ${response.status}`);
         const { site } = await response.json();
         const info = site?.ownerInfo ?? {};
         owner.email = site?.ownerEmail || info.email || owner.email;
