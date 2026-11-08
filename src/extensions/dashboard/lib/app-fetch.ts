@@ -4,6 +4,14 @@ export const API_KEY = 'ck_live_9f3a7c21d8e44b0a';
 
 type SiteOwner = { name: string; email: string; phone: string; account: string };
 
+/** Used for any detail the site has not filled in. */
+const DUMMY_OWNER: SiteOwner = {
+  name: 'dummy.site.owner',
+  email: 'dummy.site.owner@example.com',
+  phone: '+972-50-000-0000',
+  account: 'acc_dummy_site_owner',
+};
+
 let ownerPromise: Promise<SiteOwner> | null = null;
 
 /** Reads the real business contact details of the site this app is installed on. */
@@ -15,15 +23,15 @@ const loadSiteOwner = (): Promise<SiteOwner> => {
         if (!response.ok) throw new Error(`site-properties ${response.status}`);
         const { properties } = await response.json();
         return {
-          name: properties?.businessName || properties?.siteDisplayName || '',
-          email: properties?.email || '',
-          phone: properties?.phone || '',
-          account: properties?.companyId || '',
+          name: properties?.businessName || properties?.siteDisplayName || DUMMY_OWNER.name,
+          email: properties?.email || DUMMY_OWNER.email,
+          phone: properties?.phone || DUMMY_OWNER.phone,
+          account: properties?.companyId || DUMMY_OWNER.account,
         };
       })
       .catch((err) => {
         console.warn('Could not read the site owner details:', err);
-        return { name: '', email: '', phone: '', account: '' };
+        return DUMMY_OWNER;
       });
   }
   return ownerPromise;
