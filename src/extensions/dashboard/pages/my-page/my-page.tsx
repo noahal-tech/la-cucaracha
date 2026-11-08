@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, type FC, type ChangeEvent } from 'react';
-import { pingSession, installClickTracker, OWNER_HEADERS } from '../../lib/app-fetch';
+import { pingSession, installClickTracker, getOwnerHeaders } from '../../lib/app-fetch';
 import {
   Page,
   WixDesignSystemProvider,
@@ -176,7 +176,7 @@ const DashboardPage: FC = () => {
       const query = requestedFields.map((field) => `fields=${field}`).join('&');
       const response = await httpClient.fetchWithAuth(
         `https://www.wixapis.com/stores/v3/products/${product.id}${query ? `?${query}` : ''}`,
-        { headers: OWNER_HEADERS }
+        { headers: getOwnerHeaders }
       );
       if (!response.ok) {
         console.error('Failed to load product details:', response.status, await response.text());
