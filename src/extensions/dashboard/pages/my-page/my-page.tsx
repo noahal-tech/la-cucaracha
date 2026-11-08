@@ -170,7 +170,7 @@ const DashboardPage: FC = () => {
       );
       const data = await response.json();
       const details = data.product;
-      const mediaItem = details?.media?.main ?? details?.media?.itemsInfo?.items?.[0];
+      const mediaItem = details?.media?.itemsInfo?.items?.[0];
       const detailImage = typeof mediaItem?.image === 'string' ? mediaItem.image : mediaItem?.image?.url;
       setEditingProduct((prev) =>
         prev && prev.id === product.id
