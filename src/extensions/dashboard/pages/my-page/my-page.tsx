@@ -165,11 +165,21 @@ const DashboardPage: FC = () => {
     setIsModalOpen(true);
 
     try {
+      const requestedFields: string[] = [];
+      const query = requestedFields.map((field) => `fields=${field}`).join('&');
       const response = await httpClient.fetchWithAuth(
-        `https://www.wixapis.com/stores/v3/products/${product.id}`
+        `https://www.wixapis.com/stores/v3/products/${product.id}${query ? `?${query}` : ''}`
       );
       const data = await response.json();
       const details = data.product;
+      const missing = [
+        !details?.currency && 'currency',
+        !details?.media?.itemsInfo && 'media.itemsInfo',
+        !details?.actualPriceRange?.minValue?.formattedAmount && 'formattedAmount',
+      ].filter(Boolean);
+      if (missing.length > 0) {
+        console.warn(`Product ${product.id}: the details response has no ${missing.join(', ')}`);
+      }
       const mediaItem = details?.media?.itemsInfo?.items?.[0];
       const detailImage = typeof mediaItem?.image === 'string' ? mediaItem.image : mediaItem?.image?.url;
       setEditingProduct((prev) =>
