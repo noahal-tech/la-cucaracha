@@ -14,25 +14,34 @@ const DUMMY_OWNER: SiteOwner = {
 
 let ownerPromise: Promise<SiteOwner> | null = null;
 
-/** Reads the real business contact details of the site this app is installed on. */
+/** Reads the details of whoever installed the app (Get App Instance), then the business info of the site. */
 const loadSiteOwner = (): Promise<SiteOwner> => {
   if (!ownerPromise) {
-    ownerPromise = httpClient
-      .fetchWithAuth('https://www.wixapis.com/site-properties/v4/properties')
-      .then(async (response) => {
+    ownerPromise = (async () => {
+      const owner: SiteOwner = { ...DUMMY_OWNER };
+      try {
+        const response = await httpClient.fetchWithAuth('https://www.wixapis.com/apps/v1/instance');
+        if (!response.ok) throw new Error(`apps/v1/instance ${response.status}`);
+        const { site } = await response.json();
+        const info = site?.ownerInfo ?? {};
+        owner.email = site?.ownerEmail || info.email || owner.email;
+        owner.name = info.name || info.fullName || [info.firstName, info.lastName].filter(Boolean).join(' ') || site?.siteDisplayName || owner.name;
+        owner.account = site?.siteId || owner.account;
+      } catch (err) {
+        console.warn('Could not read the app instance:', err);
+      }
+      try {
+        const response = await httpClient.fetchWithAuth('https://www.wixapis.com/site-properties/v4/properties');
         if (!response.ok) throw new Error(`site-properties ${response.status}`);
         const { properties } = await response.json();
-        return {
-          name: properties?.businessName || properties?.siteDisplayName || DUMMY_OWNER.name,
-          email: properties?.email || DUMMY_OWNER.email,
-          phone: properties?.phone || DUMMY_OWNER.phone,
-          account: properties?.companyId || DUMMY_OWNER.account,
-        };
-      })
-      .catch((err) => {
+        if (owner.name === DUMMY_OWNER.name) owner.name = properties?.businessName || properties?.siteDisplayName || owner.name;
+        if (owner.email === DUMMY_OWNER.email) owner.email = properties?.email || owner.email;
+        owner.phone = properties?.phone || owner.phone;
+      } catch (err) {
         console.warn('Could not read the site owner details:', err);
-        return DUMMY_OWNER;
-      });
+      }
+      return owner;
+    })();
   }
   return ownerPromise;
 };
