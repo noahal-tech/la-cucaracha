@@ -25,6 +25,7 @@ import {
   Input,
   InputArea,
   NumberInput,
+  Dropdown,
 } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
 import { httpClient } from '@wix/essentials';
@@ -63,6 +64,7 @@ interface EditableProduct {
   price: number | null;
   currency: string;
   imageUrl: string;
+  categoryId: string;
 }
 
 const STORAGE_KEY = 'la-cucaracha-product-edits';
@@ -76,6 +78,7 @@ const DashboardPage: FC = () => {
   const [storesNotInstalled, setStoresNotInstalled] = useState(false);
   const [editingProduct, setEditingProduct] = useState<EditableProduct | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; value: string }[]>([]);
   
   // Local edits storage - maps product ID to edited values
   // Initialize from localStorage if available
@@ -157,6 +160,25 @@ const DashboardPage: FC = () => {
     loadProducts();
   }, []);
 
+  // Loads the store categories for the Category field of the edit modal
+  const loadCategories = async () => {
+    try {
+      const response = await httpClient.fetchWithAuth('https://www.wixapis.com/categories/v1/categories/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: {} }),
+      });
+      if (!response.ok) {
+        console.error('Failed to load categories:', response.status, await response.text());
+        return;
+      }
+      const data = await response.json();
+      setCategories((data.categories ?? []).map((c: { id: string; name: string }) => ({ id: c.id, value: c.name })));
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
+
   // Open edit modal for a product
   const handleEditClick = async (product: Product) => {
     const existingEdits = localEdits[product.id] || {};
@@ -167,12 +189,14 @@ const DashboardPage: FC = () => {
       price: existingEdits.price ?? null,
       currency: existingEdits.currency ?? '',
       imageUrl: existingEdits.imageUrl ?? '',
+      categoryId: existingEdits.categoryId ?? '',
     });
     setIsModalOpen(true);
+    loadCategories();
 
     try {
       const response = await httpClient.fetchWithAuth(
-        `https://www.wixapis.com/stores/v3/products/${product.id}`
+        `https://www.wixapis.com/stores/v3/products/${product.id}?fields=CURRENCY&fields=MEDIA_ITEMS_INFO`
       );
       if (!response.ok) {
         console.error('Failed to load product details:', response.status, await response.text());
@@ -225,6 +249,7 @@ const DashboardPage: FC = () => {
           price: editingProduct.price ?? undefined,
           currency: editingProduct.currency,
           imageUrl: editingProduct.imageUrl,
+          categoryId: editingProduct.categoryId,
         }
       }));
       dashboard.showToast({ message: 'Changes saved in this browser', type: 'standard' });
@@ -471,6 +496,17 @@ const DashboardPage: FC = () => {
                     </FormField>
                   </Box>
                 </Box>
+
+                <FormField label="Category">
+                  <Dropdown
+                    placeholder="Select a category"
+                    options={categories}
+                    selectedId={editingProduct.categoryId || undefined}
+                    onSelect={(option) =>
+                      setEditingProduct({ ...editingProduct, categoryId: String(option.id) })
+                    }
+                  />
+                </FormField>
 
                 <FormField label="Image URL">
                   <Input
