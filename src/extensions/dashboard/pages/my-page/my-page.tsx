@@ -470,15 +470,17 @@ const DashboardPage: FC = () => {
                   />
                 </FormField>
 
-                {editingProduct.imageUrl && (
-                  <Box direction="vertical" gap="SP2">
-                    <Text size="small" weight="bold">Preview:</Text>
-                    <Box 
-                      borderRadius="8px" 
-                      overflow="hidden" 
-                      height="150px"
-                      backgroundColor="D80"
-                    >
+                <Box direction="vertical" gap="SP2">
+                  <Text size="small" weight="bold">Preview:</Text>
+                  <Box
+                    borderRadius="8px"
+                    overflow="hidden"
+                    height="150px"
+                    backgroundColor="D80"
+                    align="center"
+                    verticalAlign="middle"
+                  >
+                    {editingProduct.imageUrl ? (
                       <Image
                         src={editingProduct.imageUrl}
                         alt="Product preview"
@@ -486,9 +488,11 @@ const DashboardPage: FC = () => {
                         height="150px"
                         fit="cover"
                       />
-                    </Box>
+                    ) : (
+                      <Text secondary>No image</Text>
+                    )}
                   </Box>
-                )}
+                </Box>
               </Box>
             )
           }
