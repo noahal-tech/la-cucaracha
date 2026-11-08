@@ -177,7 +177,7 @@ const DashboardPage: FC = () => {
           ? {
               ...prev,
               description: existingEdits.description ?? (details?.plainDescription || prev.description),
-              price: existingEdits.price ?? Number(details?.actualPriceRange?.minValue?.amount ?? 0),
+              price: existingEdits.price ?? (parseFloat(String(details?.actualPriceRange?.minValue?.formattedAmount ?? '').replace(/[^0-9.]/g, '')) || 0),
               currency: existingEdits.currency ?? details?.currency ?? '',
               imageUrl: existingEdits.imageUrl ?? detailImage ?? '',
             }
