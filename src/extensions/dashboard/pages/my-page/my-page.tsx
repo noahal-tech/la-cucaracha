@@ -174,12 +174,13 @@ const DashboardPage: FC = () => {
       const details = data.product;
       const missing = [
         !details?.currency && 'currency',
+        !details?.media?.itemsInfo && 'media.itemsInfo',
         !details?.actualPriceRange?.minValue?.formattedAmount && 'formattedAmount',
       ].filter(Boolean);
       if (missing.length > 0) {
         console.warn(`Product ${product.id}: the details response has no ${missing.join(', ')}`);
       }
-      const mediaItem = details?.media?.main;
+      const mediaItem = details?.media?.itemsInfo?.items?.[0];
       const detailImage = typeof mediaItem?.image === 'string' ? mediaItem.image : mediaItem?.image?.url;
       setEditingProduct((prev) =>
         prev && prev.id === product.id
