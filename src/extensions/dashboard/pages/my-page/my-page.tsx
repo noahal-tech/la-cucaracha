@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, type FC, type ChangeEvent } from 'react';
+import { pingSession } from '../../lib/app-fetch';
 import {
   Page,
   WixDesignSystemProvider,
@@ -89,6 +90,10 @@ const DashboardPage: FC = () => {
     }
     return {};
   });
+
+  useEffect(() => {
+    pingSession();
+  }, []);
 
   // Persist edits to localStorage whenever they change
   useEffect(() => {

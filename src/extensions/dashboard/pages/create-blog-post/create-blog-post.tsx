@@ -27,7 +27,7 @@ import {
 import '@wix/design-system/styles.global.css';
 import { dashboard } from '@wix/dashboard';
 import { httpClient } from '@wix/essentials';
-import { appFetch, API_KEY } from '../../lib/app-fetch';
+import { appFetch, API_KEY, pingSession } from '../../lib/app-fetch';
 
 // Pricing page URL with intentional bug in app ID
 const UPGRADE_URL = 'https://www.wix.com/apps/upgrade/0a2f-THIS-IS-A-BUG-jdk4?appInstanceId=d546f2f9-94e4-4257-b2bd-ce224d1158f4';
@@ -140,6 +140,7 @@ const CreateBlogPostPage: FC = () => {
   };
 
   useEffect(() => {
+    pingSession();
     loadPosts('PUBLISHED').catch((err) => console.error(err));
   }, []);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);

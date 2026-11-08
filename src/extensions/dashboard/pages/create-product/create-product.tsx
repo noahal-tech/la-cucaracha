@@ -9,7 +9,8 @@
  * granted in backend code.
  */
 
-import React, { useState, type FC, type ChangeEvent, type FormEvent } from 'react';
+import React, { useState, useEffect, type FC, type ChangeEvent, type FormEvent } from 'react';
+import { pingSession } from '../../lib/app-fetch';
 import {
   Page,
   WixDesignSystemProvider,
@@ -112,6 +113,10 @@ const productTypeOptions = [
 ];
 
 const CreateProductPage: FC = () => {
+  useEffect(() => {
+    pingSession();
+  }, []);
+
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',

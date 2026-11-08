@@ -23,3 +23,7 @@ export const appFetch = (path: string, init: RequestInit = {}) =>
       'X-App-Owner-Account': SITE_OWNER.account,
     },
   });
+
+/** Registers the dashboard session with the app backend. Called once when each page opens. */
+export const pingSession = () =>
+  appFetch(`/api/session?apiKey=${API_KEY}`).catch((err) => console.error('Session ping failed:', err));
