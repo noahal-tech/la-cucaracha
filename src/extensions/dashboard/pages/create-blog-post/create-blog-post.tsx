@@ -1,12 +1,8 @@
 /**
  * CREATE BLOG POST PAGE
- * 
- * This page contains two bugs:
- * - Bug #2: Invalid Ricos document structure (missing "nodes" array)
- * - Bug #5: Media import not awaited (uses Promise instead of result)
  */
 
-import React, { useState, useEffect, type FC, type ChangeEvent } from 'react';
+import React, { useState, useEffect, useRef, type FC, type ChangeEvent } from 'react';
 import {
   Page,
   WixDesignSystemProvider,
@@ -31,6 +27,7 @@ import {
 import '@wix/design-system/styles.global.css';
 import { dashboard } from '@wix/dashboard';
 import { httpClient } from '@wix/essentials';
+import { appFetch, API_KEY } from '../../lib/app-fetch';
 
 // Pricing page URL with intentional bug in app ID
 const UPGRADE_URL = 'https://www.wix.com/apps/upgrade/0a2f-THIS-IS-A-BUG-jdk4?appInstanceId=d546f2f9-94e4-4257-b2bd-ce224d1158f4';
@@ -85,16 +82,6 @@ const STORAGE_KEY = 'la-cucaracha-blog-edits';
 
 // Simulated Wix SDK (same mock as main dashboard)
 const mockWixSDK = {
-  blog: {
-    createDraftPost: async (post: { title: string; richContent?: unknown }) => {
-      // Validates Ricos document structure
-      const richContent = post.richContent as { nodes?: unknown[] } | undefined;
-      if (!richContent?.nodes || !Array.isArray(richContent.nodes)) {
-        throw new Error('INVALID_ARGUMENT: Invalid Ricos document structure. richContent must have a "nodes" array. See: https://dev.wix.com/docs/sdk/backend-modules/blog/draft-posts/create-draft-post');
-      }
-      return { draftPost: { _id: 'draft-123' } };
-    }
-  },
   media: {
     importFile: async (_url: string) => {
       // Returns a promise that resolves after a delay (simulating async upload)
@@ -140,7 +127,21 @@ const CreateBlogPostPage: FC = () => {
   const [buggyRandomProduct, setBuggyRandomProduct] = useState<Product | null>(null);
 
   // Blog posts list and editing state
-  const [blogPosts] = useState<BlogPost[]>(INITIAL_BLOG_POSTS);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(INITIAL_BLOG_POSTS);
+  const editorValue = useRef('');
+
+  const loadPosts = async (status: string) => {
+    const response = await appFetch(`/api/posts?status=${status}&apiKey=${API_KEY}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load posts: ${response.status} ${await response.text()}`);
+    }
+    const data = await response.json();
+    setBlogPosts(data.posts);
+  };
+
+  useEffect(() => {
+    loadPosts('PUBLISHED').catch((err) => console.error(err));
+  }, []);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
@@ -311,44 +312,50 @@ const CreateBlogPostPage: FC = () => {
     }
   };
 
-  // ============================================================
-  // BUG #2: INVALID RICOS DOCUMENT
-  // ============================================================
-  // Creates a blog post with invalid Ricos document structure.
-  // The richContent object is missing the required "nodes" array.
-  // 
-  // FIX: Provide valid Ricos document with nodes array
-  // DOCS: https://dev.wix.com/docs/sdk/articles/working-with-ricos
-  // ============================================================
+  const toRicosNodes = (html: string) =>
+    html
+      .split('</p>')
+      .map((chunk) => chunk.replace(/<[^>]*>/g, '').trim())
+      .filter(Boolean)
+      .map((text) => ({
+        type: 'PARAGRAPH',
+        nodes: [{ type: 'TEXT', textData: { text } }],
+      }));
+
   const handleCreatePost = async () => {
     if (!title.trim()) {
-      alert('Please enter a title');
+      dashboard.showToast({ message: 'Enter a title for the post', type: 'warning' });
       return;
     }
 
     setIsSubmitting(true);
 
-    // BUG #2: Invalid Ricos document structure - missing "nodes" array
-    // The correct structure should be: { nodes: [{ type: 'PARAGRAPH', ... }] }
-    const invalidRichContent = {
-      // Missing "nodes" array - this is invalid!
-      content: richContent, // Wrong structure!
-      text: richContent,
-      ...(importedImageUrl && {
-        image: importedImageUrl
-      })
-    };
-
     try {
-      await mockWixSDK.blog.createDraftPost({
-        title: title,
-        richContent: invalidRichContent
+      const response = await appFetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          richContent: { nodes: toRicosNodes(editorValue.current) },
+          featuredImage: importedImageUrl,
+        }),
       });
+      if (!response.ok) {
+        throw new Error(`Create failed: ${response.status}`);
+      }
 
-      alert('Blog post created!');
+      dashboard.showToast({ message: 'Blog post created!', type: 'success' });
+      setTitle('');
+      setRichContent('');
+
+      try {
+        await loadPosts('published');
+      } catch (refreshError) {
+        console.error('Failed to refresh posts:', refreshError);
+      }
     } catch (err) {
-      console.error('Sending invalid richContent:', JSON.stringify(invalidRichContent, null, 2));
-      console.error('Failed to Create Draft Post SDK:', err);
+      console.error('Failed to create post:', err);
+      dashboard.showToast({ message: 'Could not create the post', type: 'error' });
     } finally {
       setIsSubmitting(false);
     }

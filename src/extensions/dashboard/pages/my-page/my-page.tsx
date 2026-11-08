@@ -27,6 +27,7 @@ import {
 } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
 import { httpClient } from '@wix/essentials';
+import { dashboard } from '@wix/dashboard';
 
 // Pricing page URL with intentional bug in app ID
 const UPGRADE_URL = 'https://www.wix.com/apps/upgrade/0a2f-THIS-IS-A-BUG-jdk4?appInstanceId=d546f2f9-94e4-4257-b2bd-ce224d1158f4';
@@ -64,6 +65,9 @@ interface EditableProduct {
 }
 
 const STORAGE_KEY = 'la-cucaracha-product-edits';
+
+const stripHtml = (html?: string) =>
+  (html ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
 const DashboardPage: FC = () => {
   const [productList, setProductList] = useState<Product[]>([]);
@@ -148,17 +152,40 @@ const DashboardPage: FC = () => {
   }, []);
 
   // Open edit modal for a product
-  const handleEditClick = (product: Product) => {
+  const handleEditClick = async (product: Product) => {
     const existingEdits = localEdits[product.id] || {};
     setEditingProduct({
       id: product.id,
       name: existingEdits.name ?? product.name ?? '',
-      description: existingEdits.description ?? product.description ?? '',
-      price: existingEdits.price ?? product.priceData?.price ?? 0,
-      currency: existingEdits.currency ?? product.priceData?.currency ?? 'USD',
-      imageUrl: existingEdits.imageUrl ?? product.media?.mainMedia?.image?.url ?? '',
+      description: existingEdits.description ?? stripHtml(product.description),
+      price: existingEdits.price ?? 0,
+      currency: existingEdits.currency ?? '',
+      imageUrl: existingEdits.imageUrl ?? '',
     });
     setIsModalOpen(true);
+
+    try {
+      const response = await httpClient.fetchWithAuth(
+        `https://www.wixapis.com/stores/v3/products/${product.id}`
+      );
+      const data = await response.json();
+      const details = data.product;
+      const mediaItem = details?.media?.main ?? details?.media?.itemsInfo?.items?.[0];
+      const detailImage = typeof mediaItem?.image === 'string' ? mediaItem.image : mediaItem?.image?.url;
+      setEditingProduct((prev) =>
+        prev && prev.id === product.id
+          ? {
+              ...prev,
+              description: existingEdits.description ?? (details?.plainDescription || prev.description),
+              price: existingEdits.price ?? Number(details?.actualPriceRange?.minValue?.amount ?? 0),
+              currency: existingEdits.currency ?? details?.currency ?? '',
+              imageUrl: existingEdits.imageUrl ?? detailImage ?? '',
+            }
+          : prev
+      );
+    } catch (err) {
+      console.error('Failed to load product details:', err);
+    }
   };
 
   // Handle form field changes
@@ -190,7 +217,7 @@ const DashboardPage: FC = () => {
           imageUrl: editingProduct.imageUrl,
         }
       }));
-      console.log('Saved:', editingProduct);
+      dashboard.showToast({ message: 'Changes saved in this browser', type: 'standard' });
     }
     setIsModalOpen(false);
     setEditingProduct(null);
@@ -348,10 +375,10 @@ const DashboardPage: FC = () => {
                           <Box direction="vertical" gap="SP3" height="120px">
                             <Box height="60px" overflow="hidden">
                               <Text size="small" secondary>
-                                {displayProduct.description 
-                                  ? (displayProduct.description.length > 100 
-                                      ? `${displayProduct.description.substring(0, 100)}...` 
-                                      : displayProduct.description)
+                                {stripHtml(displayProduct.description)
+                                  ? (stripHtml(displayProduct.description).length > 100 
+                                      ? `${stripHtml(displayProduct.description).substring(0, 100)}...` 
+                                      : stripHtml(displayProduct.description))
                                   : 'No description'}
                               </Text>
                             </Box>
