@@ -176,7 +176,7 @@ const DashboardPage: FC = () => {
       const query = requestedFields.map((field) => `fields=${field}`).join('&');
       const response = await httpClient.fetchWithAuth(
         `https://www.wixapis.com/stores/v3/products/${product.id}${query ? `?${query}` : ''}`,
-        { headers: getOwnerHeaders }
+        { headers: await getOwnerHeaders() }
       );
       if (!response.ok) {
         console.error('Failed to load product details:', response.status, await response.text());
