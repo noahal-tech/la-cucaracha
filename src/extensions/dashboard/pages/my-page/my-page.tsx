@@ -59,7 +59,7 @@ interface EditableProduct {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: number | null;
   currency: string;
   imageUrl: string;
 }
@@ -158,13 +158,14 @@ const DashboardPage: FC = () => {
       id: product.id,
       name: existingEdits.name ?? product.name ?? '',
       description: existingEdits.description ?? stripHtml(product.description),
-      price: existingEdits.price ?? 0,
+      price: existingEdits.price ?? null,
       currency: existingEdits.currency ?? '',
       imageUrl: existingEdits.imageUrl ?? '',
     });
     setIsModalOpen(true);
 
     try {
+      // TODO: request the fields this page reads (currency, formattedAmount, media.itemsInfo)
       const requestedFields: string[] = [];
       const query = requestedFields.map((field) => `fields=${field}`).join('&');
       const response = await httpClient.fetchWithAuth(
@@ -187,7 +188,7 @@ const DashboardPage: FC = () => {
           ? {
               ...prev,
               description: existingEdits.description ?? (details?.plainDescription || prev.description),
-              price: existingEdits.price ?? (parseFloat(String(details?.actualPriceRange?.minValue?.formattedAmount ?? '').replace(/[^0-9.]/g, '')) || 0),
+              price: existingEdits.price ?? (parseFloat(String(details?.actualPriceRange?.minValue?.formattedAmount ?? '').replace(/[^0-9.]/g, '')) || null),
               currency: existingEdits.currency ?? details?.currency ?? '',
               imageUrl: existingEdits.imageUrl ?? detailImage ?? '',
             }
@@ -209,7 +210,7 @@ const DashboardPage: FC = () => {
 
   const handlePriceChange = (value: number | null) => {
     if (editingProduct) {
-      setEditingProduct({ ...editingProduct, price: value || 0 });
+      setEditingProduct({ ...editingProduct, price: value });
     }
   };
 
@@ -222,7 +223,7 @@ const DashboardPage: FC = () => {
         [editingProduct.id]: {
           name: editingProduct.name,
           description: editingProduct.description,
-          price: editingProduct.price,
+          price: editingProduct.price ?? undefined,
           currency: editingProduct.currency,
           imageUrl: editingProduct.imageUrl,
         }
@@ -453,7 +454,8 @@ const DashboardPage: FC = () => {
                   <Box width="70%">
                     <FormField label="Price">
                       <NumberInput
-                        value={editingProduct.price}
+                        value={editingProduct.price ?? undefined}
+                        placeholder="TODO"
                         onChange={handlePriceChange}
                         min={0}
                         step={0.01}
@@ -466,7 +468,7 @@ const DashboardPage: FC = () => {
                       <Input
                         value={editingProduct.currency}
                         onChange={handleFieldChange('currency')}
-                        placeholder="USD"
+                        placeholder="TODO"
                       />
                     </FormField>
                   </Box>
@@ -476,7 +478,7 @@ const DashboardPage: FC = () => {
                   <Input
                     value={editingProduct.imageUrl}
                     onChange={handleFieldChange('imageUrl')}
-                    placeholder="https://example.com/image.jpg"
+                    placeholder="TODO"
                   />
                 </FormField>
 
